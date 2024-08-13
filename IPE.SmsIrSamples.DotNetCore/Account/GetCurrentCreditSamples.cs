@@ -1,4 +1,6 @@
 ﻿using IPE.SmsIrClient;
+using IPE.SmsIrClient.Exceptions;
+using IPE.SmsIrClient.Models.Results;
 using System;
 using System.Threading.Tasks;
 
@@ -16,10 +18,54 @@ public static class GetCurrentCreditSamples
         try
         {
             // کلید ای‌پی‌آی ساخته‌شده در سامانه
-            SmsIr smsIr = new SmsIr("uw7ppC4vGibwGFgAwLyRexHjyEb82yFFEXbbwOoOVT9GVMAQXoDO1vTkx59cOgoJ");
+            SmsIr smsIr = new("uw7ppC4vGibwGFgAwLyRexHjyEb82yFFEXbbwOoOVT9GVMAQXoDO1vTkx59cOgoJ");
 
             // انجام دریافت اعتبار
-            var response = await smsIr.GetCreditAsync();
+            SmsIrResult<decimal> response = await smsIr.GetCreditAsync();
+
+            // دریافت اعتبار شما در اینجا با موفقیت انجام شده‌است.
+
+            // گرفتن بخش دیتا خروجی
+            decimal credit = response.Data;
+
+            // توضیحات خروجی
+            string description = $"Credit: {credit}";
+
+            await Console.Out.WriteLineAsync(description);
+        }
+        catch (SmsIrException ex) // درخواست ناموفق
+        {
+            // جدول توضیحات کد وضعیت
+            // https://app.sms.ir/developer/help/statusCode
+
+            string errorDescription = ex switch
+            {
+                LogicalException => $"Logical Error (Status: {ex.Status}): {ex.Message}. Please check your request parameters.",
+                UnauthorizedException => $"Unauthorized (Status: {ex.Status}): {ex.Message}. Please check your API key.",
+                AccessDeniedException => $"Access Denied (Status: {ex.Status}): {ex.Message}. Please check your plan.",
+                TooManyRequestException => $"Too Many Requests (Status: {ex.Status}): {ex.Message}. Please try again later.",
+                UnexpectedException => $"Unexpected Error (Status: {ex.Status}): {ex.Message}. An unexpected error occured.",
+                _ => $"SmsIr Error (Status: {ex.Status}): {ex.Message}"
+            };
+
+            await Console.Out.WriteLineAsync(errorDescription);
+        }
+        catch (Exception ex)
+        {
+            string errorMessage = $"{ex.GetType().Name}: {ex.Message}";
+            await Console.Out.WriteLineAsync(errorMessage);
+        }
+    }
+
+    public static async Task GetCurrentCredit2Async()
+    {
+        try
+        {
+            // کلید ای‌پی‌آی ساخته‌شده در سامانه
+            SmsIr smsIr = new("uw7ppC4vGibwGFgAwLyRexHjyEb82yFFEXbbwOoOVT9GVMAQXoDO1vTkx59cOgoJ");
+
+            // انجام دریافت اعتبار
+            SmsIrResult<decimal> response = await smsIr.GetCreditAsync();
 
             // دریافت اعتبار شما در اینجا با موفقیت انجام شده‌است.
 
@@ -36,18 +82,30 @@ public static class GetCurrentCreditSamples
             // جدول توضیحات کد وضعیت
             // https://app.sms.ir/developer/help/statusCode
 
-            string errorName = ex.GetType().Name;
-            string errorNameDescription = errorName switch
+            string errorDescription = ex switch
             {
-                "UnauthorizedException" => "The provided token is not valid or access is denied.",
-                "LogicalException" => "Please check and correct the request parameters.",
-                "TooManyRequestException" => "The request count has exceeded the allowed limit.",
-                "UnexpectedException" or "InvalidOperationException" => "An unexpected error occurred on the remote server.",
-                _ => "Unable to send the request due to an unspecified error.",
-            };
+                SmsIrException smsIrException =>
+                    smsIrException switch
+                    {
+                        LogicalException => $"Logical Error (Status: {smsIrException.Status})" +
+                            $": {smsIrException.Message}. Please check your request parameters.",
 
-            var errorDescription = "There is a problem with the request." +
-                $"\n - Error: {errorName} - {errorNameDescription} - {ex.Message}";
+                        UnauthorizedException => $"Unauthorized (Status: {smsIrException.Status})" +
+                            $": {smsIrException.Message}. Please check your API key.",
+
+                        AccessDeniedException => $"Access Denied (Status: {smsIrException.Status})" +
+                            $": {smsIrException.Message}. Please check your plan.",
+
+                        TooManyRequestException => $"Too Many Requests (Status: {smsIrException.Status})" +
+                            $": {smsIrException.Message}. Please try again later.",
+
+                        UnexpectedException => $"Unexpected Error (Status: {smsIrException.Status})" +
+                            $": {smsIrException.Message}. An unexpected error occured.",
+
+                        _ => $"SmsIr Error (Status: {smsIrException.Status}): {smsIrException.Message}"
+                    },
+                _ => $"{ex.GetType().Name}: {ex.Message}"
+            };
 
             await Console.Out.WriteLineAsync(errorDescription);
         }

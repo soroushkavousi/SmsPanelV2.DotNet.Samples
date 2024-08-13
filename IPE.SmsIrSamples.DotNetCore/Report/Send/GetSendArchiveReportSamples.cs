@@ -1,4 +1,5 @@
 ﻿using IPE.SmsIrClient;
+using IPE.SmsIrClient.Exceptions;
 using IPE.SmsIrClient.Models.Results;
 using IPE.SmsIrSamples.DotNetCore.Report.Models;
 using System;
@@ -90,7 +91,7 @@ public static class GetSendArchiveReportSamples
 
             await Console.Out.WriteLineAsync(reportDescription);
         }
-        catch (Exception ex) // درخواست ناموفق
+        catch (SmsIrException ex) // درخواست ناموفق
         {
             // جدول توضیحات کد وضعیت
             // https://app.sms.ir/developer/help/statusCode
